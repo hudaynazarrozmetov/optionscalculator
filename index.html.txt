@@ -1,9 +1,9 @@
-]<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Options Profit & Loss Calculator</title>
+    <title>Nazar Trades - Options Calculator</title>
     <style>
         :root {
             --color-bg-base: #0f172a;
@@ -41,14 +41,10 @@
         }
 
         h1 {
-            font-size: 28px;
+            font-size: 36px;
+            font-weight: 700;
             color: var(--color-primary);
             margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: var(--color-text-secondary);
-            font-size: 14px;
         }
 
         .card {
@@ -119,13 +115,8 @@
             color: var(--color-primary);
         }
 
-        .result-value.success {
-            color: var(--color-success);
-        }
-
-        .result-value.danger {
-            color: var(--color-danger);
-        }
+        .result-value.success { color: var(--color-success); }
+        .result-value.danger { color: var(--color-danger); }
 
         .targets {
             display: grid;
@@ -152,12 +143,6 @@
             font-size: 28px;
             font-weight: 700;
             color: var(--color-success);
-            margin-bottom: 4px;
-        }
-
-        .target-points {
-            font-size: 14px;
-            color: var(--color-text-secondary);
         }
 
         button {
@@ -173,60 +158,30 @@
             transition: opacity 0.2s;
         }
 
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .risk-indicator {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 8px;
-        }
-
-        .risk-conservative {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--color-success);
-        }
-
-        .risk-moderate {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-
-        .risk-aggressive {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--color-danger);
-        }
+        button:hover { opacity: 0.9; }
 
         @media (max-width: 600px) {
-            .row {
-                grid-template-columns: 1fr;
-            }
+            .row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1 style="font-size: 36px; font-weight: 700; margin-bottom: 8px;">Nazar Trades</h1>
-            <p style="font-size: 18px; color: var(--color-text-secondary); margin-bottom: 20px;">Options Profit & Loss Calculator</p>
+            <h1>Nazar Trades</h1>
+            <p style="font-size: 18px; color: var(--color-text-secondary);">Options Profit & Loss Calculator</p>
         </header>
 
         <div class="card">
             <h2 style="margin-bottom: 20px; font-size: 18px;">Position Setup</h2>
-            
             <div class="row">
                 <div class="input-group">
                     <label for="account">Account Size ($)</label>
-                    <input type="text" id="account" value="" placeholder="$0">
+                    <input type="text" id="account" placeholder="$0">
                 </div>
-                
                 <div class="input-group">
                     <label for="risk">Risk Per Trade (%)</label>
-                    <input type="number" id="risk" value="" step="0.1" min="0" max="100">
+                    <input type="number" id="risk" step="0.1" min="0" max="100">
                 </div>
             </div>
 
@@ -241,36 +196,33 @@
             <div class="row">
                 <div class="input-group">
                     <label for="entryPrice">Entry Price (per contract) ($)</label>
-                    <input type="text" id="entryPrice" value="" placeholder="$0.00">
+                    <input type="text" id="entryPrice" placeholder="$0.00">
                 </div>
-                
                 <div class="input-group">
                     <label for="contracts">Contracts</label>
-                    <input type="number" id="contracts" value="" step="1" min="1">
+                    <input type="number" id="contracts" step="1" min="1">
                 </div>
             </div>
 
             <div class="row">
                 <div class="input-group">
                     <label for="stopLossPercent">Stop Loss (%)</label>
-                    <input type="number" id="stopLossPercent" value="" step="1" min="0">
+                    <input type="number" id="stopLossPercent" step="1" min="0">
                 </div>
-                
                 <div class="input-group">
                     <label for="target1Percent">Target 1 (%)</label>
-                    <input type="number" id="target1Percent" value="" step="1" min="0">
+                    <input type="number" id="target1Percent" step="1" min="0">
                 </div>
             </div>
 
             <div class="row">
                 <div class="input-group">
-                    <label for="target2Percent">Target 2 (%) - Optional</label>
-                    <input type="number" id="target2Percent" value="" step="1" min="0">
+                    <label for="target2Percent">Target 2 (%)</label>
+                    <input type="number" id="target2Percent" step="1" min="0">
                 </div>
-                
                 <div class="input-group">
-                    <label for="target3Percent">Target 3 (%) - Optional</label>
-                    <input type="number" id="target3Percent" value="" step="1" min="0">
+                    <label for="target3Percent">Target 3 (%)</label>
+                    <input type="number" id="target3Percent" step="1" min="0">
                 </div>
             </div>
 
@@ -279,46 +231,31 @@
 
         <div class="card">
             <h2 style="margin-bottom: 20px; font-size: 18px;">Position & Risk</h2>
-            
             <div class="results-grid">
                 <div class="result-box">
                     <div class="result-label">Risk Amount</div>
                     <div class="result-value danger" id="riskAmount">$0</div>
                 </div>
-                
                 <div class="result-box">
                     <div class="result-label">Stop Loss Price</div>
                     <div class="result-value danger" id="stopLossPrice">$0</div>
                 </div>
-                
                 <div class="result-box">
                     <div class="result-label">Target 1 Price</div>
                     <div class="result-value success" id="target1Price">$0</div>
-                </div>
-                
-                <div class="result-box">
-                    <div class="result-label">Target 2 Price</div>
-                    <div class="result-value success" id="target2Price"></div>
-                </div>
-                
-                <div class="result-box">
-                    <div class="result-label">Target 3 Price</div>
-                    <div class="result-value success" id="target3Price"></div>
                 </div>
             </div>
         </div>
 
         <div class="card">
             <h2 style="margin-bottom: 20px; font-size: 18px;">Profit Targets</h2>
-            
             <div class="targets" id="targetsContainer"></div>
         </div>
 
         <div class="card" style="background: rgba(56, 189, 248, 0.05);">
             <h3 style="font-size: 14px; color: var(--color-text-secondary); margin-bottom: 12px;">Note</h3>
             <p style="font-size: 13px; color: var(--color-text-secondary);">
-                Each options contract represents 100 shares. Risk per contract = (Entry Price - Stop Loss) × 100. 
-                Always verify calculations and manage risk according to your trading plan.
+                Each options contract represents 100 shares. Risk per contract = (Entry Price - Stop Loss) × 100.
             </p>
         </div>
     </div>
@@ -338,13 +275,8 @@
             return parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
         }
 
-        document.getElementById('account').addEventListener('blur', function() {
-            formatCurrency(this);
-        });
-
-        document.getElementById('entryPrice').addEventListener('blur', function() {
-            formatCurrency(this);
-        });
+        document.getElementById('account').addEventListener('blur', function() { formatCurrency(this); });
+        document.getElementById('entryPrice').addEventListener('blur', function() { formatCurrency(this); });
 
         function calculate() {
             const entryPrice = parseCurrency(document.getElementById('entryPrice').value);
@@ -360,37 +292,26 @@
             const target3 = target3Percent > 0 ? entryPrice * (1 + target3Percent / 100) : 0;
 
             const multiplier = 100;
-            
-            const riskPerContract = Math.abs(entryPrice - stopLoss) * multiplier;
-            const totalRisk = contracts * riskPerContract;
+            const totalRisk = contracts * (Math.abs(entryPrice - stopLoss) * multiplier);
 
             document.getElementById('riskAmount').textContent = '$' + (totalRisk || 0).toFixed(2);
             document.getElementById('stopLossPrice').textContent = '$' + (stopLoss || 0).toFixed(2);
-            document.getElementById('target1Price').textContent = target1 > 0 ? '$' + target1.toFixed(2) : '';
-            document.getElementById('target2Price').textContent = target2 > 0 ? '$' + target2.toFixed(2) : '';
-            document.getElementById('target3Price').textContent = target3 > 0 ? '$' + target3.toFixed(2) : '';
+            document.getElementById('target1Price').textContent = '$' + (target1 || 0).toFixed(2);
 
             const targetsContainer = document.getElementById('targetsContainer');
             targetsContainer.innerHTML = '';
 
-            const targets = [
+            [
                 { price: target1, label: 'Target 1' },
                 { price: target2, label: 'Target 2' },
                 { price: target3, label: 'Target 3' }
-            ];
-
-            targets.forEach((target, index) => {
-                if (target.price > 0 && target.price !== entryPrice) {
-                    const profitPerContract = Math.abs(target.price - entryPrice) * multiplier;
-                    const totalProfit = contracts * profitPerContract;
-
-                    const targetCard = document.createElement('div');
-                    targetCard.className = 'target-card';
-                    targetCard.innerHTML = `
-                        <div class="target-title">${target.label}</div>
-                        <div class="target-profit">$${totalProfit.toFixed(2)}</div>
-                    `;
-                    targetsContainer.appendChild(targetCard);
+            ].forEach(t => {
+                if (t.price > 0) {
+                    const profit = contracts * (Math.abs(t.price - entryPrice) * multiplier);
+                    const div = document.createElement('div');
+                    div.className = 'target-card';
+                    div.innerHTML = `<div class="target-title">${t.label}</div><div class="target-profit">$${profit.toFixed(2)}</div>`;
+                    targetsContainer.appendChild(div);
                 }
             });
         }
