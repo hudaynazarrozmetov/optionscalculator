@@ -221,12 +221,12 @@
             <div class="row">
                 <div class="input-group">
                     <label for="account">Account Size ($)</label>
-                    <input type="text" id="account" value="" placeholder="$0">
+                    <input type="number" id="account" inputmode="decimal" placeholder="0">
                 </div>
                 
                 <div class="input-group">
                     <label for="risk">Risk Per Trade (%)</label>
-                    <input type="number" id="risk" value="" step="0.1" min="0" max="100">
+                    <input type="number" id="risk" step="0.1" min="0" max="100" placeholder="0">
                 </div>
             </div>
 
@@ -241,36 +241,48 @@
             <div class="row">
                 <div class="input-group">
                     <label for="entryPrice">Entry Price (per contract) ($)</label>
-                    <input type="text" id="entryPrice" value="" placeholder="$0.00">
+                    <input type="number" id="entryPrice" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
                 </div>
                 
                 <div class="input-group">
                     <label for="contracts">Contracts</label>
-                    <input type="number" id="contracts" value="" step="1" min="1">
+                    <input type="number" id="contracts" step="1" min="1" placeholder="0">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label for="commissionPerContract">Commission (per contract, round-trip) ($)</label>
+                    <input type="number" id="commissionPerContract" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+                </div>
+
+                <div class="input-group">
+                    <label for="extraContracts">Extra Contracts (optional)</label>
+                    <input type="number" id="extraContracts" step="1" min="0" placeholder="0">
                 </div>
             </div>
 
             <div class="row">
                 <div class="input-group">
                     <label for="stopLossPercent">Stop Loss (%)</label>
-                    <input type="number" id="stopLossPercent" value="" step="1" min="0">
+                    <input type="number" id="stopLossPercent" step="1" min="0" placeholder="0">
                 </div>
                 
                 <div class="input-group">
                     <label for="target1Percent">Target 1 (%)</label>
-                    <input type="number" id="target1Percent" value="" step="1" min="0">
+                    <input type="number" id="target1Percent" step="1" min="0" placeholder="0">
                 </div>
             </div>
 
             <div class="row">
                 <div class="input-group">
                     <label for="target2Percent">Target 2 (%) - Optional</label>
-                    <input type="number" id="target2Percent" value="" step="1" min="0">
+                    <input type="number" id="target2Percent" step="1" min="0" placeholder="0">
                 </div>
                 
                 <div class="input-group">
                     <label for="target3Percent">Target 3 (%) - Optional</label>
-                    <input type="number" id="target3Percent" value="" step="1" min="0">
+                    <input type="number" id="target3Percent" step="1" min="0" placeholder="0">
                 </div>
             </div>
 
@@ -283,17 +295,17 @@
             <div class="results-grid">
                 <div class="result-box">
                     <div class="result-label">Risk Amount</div>
-                    <div class="result-value danger" id="riskAmount">$0</div>
+                    <div class="result-value danger" id="riskAmount"></div>
                 </div>
                 
                 <div class="result-box">
                     <div class="result-label">Stop Loss Price</div>
-                    <div class="result-value danger" id="stopLossPrice">$0</div>
+                    <div class="result-value danger" id="stopLossPrice"></div>
                 </div>
                 
                 <div class="result-box">
                     <div class="result-label">Target 1 Price</div>
-                    <div class="result-value success" id="target1Price">$0</div>
+                    <div class="result-value success" id="target1Price"></div>
                 </div>
                 
                 <div class="result-box">
@@ -317,58 +329,75 @@
         <div class="card" style="background: rgba(56, 189, 248, 0.05);">
             <h3 style="font-size: 14px; color: var(--color-text-secondary); margin-bottom: 12px;">Note</h3>
             <p style="font-size: 13px; color: var(--color-text-secondary);">
-                Each options contract represents 100 shares. Risk per contract = (Entry Price - Stop Loss) × 100. 
-                Always verify calculations and manage risk according to your trading plan.
+                Each options contract represents 100 shares. Risk per contract is based on the difference between entry and stop price times 100. 
+                Commissions reduce your net profit per contract. Always verify calculations and manage risk according to your trading plan.
             </p>
         </div>
     </div>
 
     <script>
-        function formatCurrency(input) {
-            let value = input.value.replace(/[^0-9.]/g, '');
-            if (value) {
-                const num = parseFloat(value);
-                if (!isNaN(num)) {
-                    input.value = '$' + num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 2});
-                }
-            }
+        function parseNumber(value) {
+            const num = parseFloat(value);
+            return isNaN(num) ? 0 : num;
         }
 
-        function parseCurrency(value) {
-            return parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+        function formatMoney(num) {
+            if (!num && num !== 0) return '';
+            return '$' + num.toFixed(2);
         }
-
-        document.getElementById('account').addEventListener('blur', function() {
-            formatCurrency(this);
-        });
-
-        document.getElementById('entryPrice').addEventListener('blur', function() {
-            formatCurrency(this);
-        });
 
         function calculate() {
-            const entryPrice = parseCurrency(document.getElementById('entryPrice').value);
-            const contracts = parseFloat(document.getElementById('contracts').value) || 0;
-            const stopLossPercent = parseFloat(document.getElementById('stopLossPercent').value) || 0;
-            const target1Percent = parseFloat(document.getElementById('target1Percent').value) || 0;
-            const target2Percent = parseFloat(document.getElementById('target2Percent').value) || 0;
-            const target3Percent = parseFloat(document.getElementById('target3Percent').value) || 0;
+            const optionType = document.getElementById('optionType').value;
 
-            const stopLoss = stopLossPercent > 0 ? entryPrice * (1 - stopLossPercent / 100) : 0;
-            const target1 = target1Percent > 0 ? entryPrice * (1 + target1Percent / 100) : 0;
-            const target2 = target2Percent > 0 ? entryPrice * (1 + target2Percent / 100) : 0;
-            const target3 = target3Percent > 0 ? entryPrice * (1 + target3Percent / 100) : 0;
+            const entryPrice = parseNumber(document.getElementById('entryPrice').value);
+            const contracts = parseNumber(document.getElementById('contracts').value);
+            const extraContracts = parseNumber(document.getElementById('extraContracts').value);
+            const totalContracts = contracts + extraContracts;
+
+            const stopLossPercent = parseNumber(document.getElementById('stopLossPercent').value);
+            const target1Percent = parseNumber(document.getElementById('target1Percent').value);
+            const target2Percent = parseNumber(document.getElementById('target2Percent').value);
+            const target3Percent = parseNumber(document.getElementById('target3Percent').value);
+            const commissionPerContract = parseNumber(document.getElementById('commissionPerContract').value);
+
+            if (!entryPrice || !totalContracts) {
+                // If no key data, just clear outputs
+                document.getElementById('riskAmount').textContent = '';
+                document.getElementById('stopLossPrice').textContent = '';
+                document.getElementById('target1Price').textContent = '';
+                document.getElementById('target2Price').textContent = '';
+                document.getElementById('target3Price').textContent = '';
+                document.getElementById('targetsContainer').innerHTML = '';
+                return;
+            }
 
             const multiplier = 100;
-            
-            const riskPerContract = Math.abs(entryPrice - stopLoss) * multiplier;
-            const totalRisk = contracts * riskPerContract;
 
-            document.getElementById('riskAmount').textContent = '$' + (totalRisk || 0).toFixed(2);
-            document.getElementById('stopLossPrice').textContent = '$' + (stopLoss || 0).toFixed(2);
-            document.getElementById('target1Price').textContent = target1 > 0 ? '$' + target1.toFixed(2) : '';
-            document.getElementById('target2Price').textContent = target2 > 0 ? '$' + target2.toFixed(2) : '';
-            document.getElementById('target3Price').textContent = target3 > 0 ? '$' + target3.toFixed(2) : '';
+            // For calls: stop below entry, targets above.
+            // For puts: stop above entry, targets below.
+            let stopLoss, target1, target2, target3;
+
+            if (optionType === 'call') {
+                stopLoss = stopLossPercent > 0 ? entryPrice * (1 - stopLossPercent / 100) : 0;
+                target1 = target1Percent > 0 ? entryPrice * (1 + target1Percent / 100) : 0;
+                target2 = target2Percent > 0 ? entryPrice * (1 + target2Percent / 100) : 0;
+                target3 = target3Percent > 0 ? entryPrice * (1 + target3Percent / 100) : 0;
+            } else {
+                // Put: profit when price goes down, so targets are below entry
+                stopLoss = stopLossPercent > 0 ? entryPrice * (1 + stopLossPercent / 100) : 0;
+                target1 = target1Percent > 0 ? entryPrice * (1 - target1Percent / 100) : 0;
+                target2 = target2Percent > 0 ? entryPrice * (1 - target2Percent / 100) : 0;
+                target3 = target3Percent > 0 ? entryPrice * (1 - target3Percent / 100) : 0;
+            }
+
+            const riskPerContract = stopLoss > 0 ? Math.abs(entryPrice - stopLoss) * multiplier : 0;
+            const totalRisk = totalContracts * riskPerContract;
+
+            document.getElementById('riskAmount').textContent = totalRisk ? formatMoney(totalRisk) : '';
+            document.getElementById('stopLossPrice').textContent = stopLoss ? formatMoney(stopLoss) : '';
+            document.getElementById('target1Price').textContent = target1 ? formatMoney(target1) : '';
+            document.getElementById('target2Price').textContent = target2 ? formatMoney(target2) : '';
+            document.getElementById('target3Price').textContent = target3 ? formatMoney(target3) : '';
 
             const targetsContainer = document.getElementById('targetsContainer');
             targetsContainer.innerHTML = '';
@@ -379,16 +408,18 @@
                 { price: target3, label: 'Target 3' }
             ];
 
-            targets.forEach((target, index) => {
+            targets.forEach((target) => {
                 if (target.price > 0 && target.price !== entryPrice) {
-                    const profitPerContract = Math.abs(target.price - entryPrice) * multiplier;
-                    const totalProfit = contracts * profitPerContract;
+                    const grossProfitPerContract = Math.abs(target.price - entryPrice) * multiplier;
+                    const commissionTotalPerContract = commissionPerContract;
+                    const netProfitPerContract = grossProfitPerContract - commissionTotalPerContract;
+                    const totalNetProfit = totalContracts * netProfitPerContract;
 
                     const targetCard = document.createElement('div');
                     targetCard.className = 'target-card';
                     targetCard.innerHTML = `
                         <div class="target-title">${target.label}</div>
-                        <div class="target-profit">$${totalProfit.toFixed(2)}</div>
+                        <div class="target-profit">${totalNetProfit ? formatMoney(totalNetProfit) : ''}</div>
                     `;
                     targetsContainer.appendChild(targetCard);
                 }
