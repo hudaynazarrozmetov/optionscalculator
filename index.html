@@ -256,10 +256,8 @@
                     <input type="number" id="commissionPerContract" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
                 </div>
 
-                <div class="input-group">
-                    <label for="extraContracts">Extra Contracts (optional)</label>
-                    <input type="number" id="extraContracts" step="1" min="0" placeholder="0">
-                </div>
+                <!-- second column stays empty for now to keep layout clean -->
+                <div class="input-group"></div>
             </div>
 
             <div class="row">
@@ -351,8 +349,6 @@
 
             const entryPrice = parseNumber(document.getElementById('entryPrice').value);
             const contracts = parseNumber(document.getElementById('contracts').value);
-            const extraContracts = parseNumber(document.getElementById('extraContracts').value);
-            const totalContracts = contracts + extraContracts;
 
             const stopLossPercent = parseNumber(document.getElementById('stopLossPercent').value);
             const target1Percent = parseNumber(document.getElementById('target1Percent').value);
@@ -360,8 +356,7 @@
             const target3Percent = parseNumber(document.getElementById('target3Percent').value);
             const commissionPerContract = parseNumber(document.getElementById('commissionPerContract').value);
 
-            if (!entryPrice || !totalContracts) {
-                // If no key data, just clear outputs
+            if (!entryPrice || !contracts) {
                 document.getElementById('riskAmount').textContent = '';
                 document.getElementById('stopLossPrice').textContent = '';
                 document.getElementById('target1Price').textContent = '';
@@ -373,8 +368,6 @@
 
             const multiplier = 100;
 
-            // For calls: stop below entry, targets above.
-            // For puts: stop above entry, targets below.
             let stopLoss, target1, target2, target3;
 
             if (optionType === 'call') {
@@ -383,7 +376,6 @@
                 target2 = target2Percent > 0 ? entryPrice * (1 + target2Percent / 100) : 0;
                 target3 = target3Percent > 0 ? entryPrice * (1 + target3Percent / 100) : 0;
             } else {
-                // Put: profit when price goes down, so targets are below entry
                 stopLoss = stopLossPercent > 0 ? entryPrice * (1 + stopLossPercent / 100) : 0;
                 target1 = target1Percent > 0 ? entryPrice * (1 - target1Percent / 100) : 0;
                 target2 = target2Percent > 0 ? entryPrice * (1 - target2Percent / 100) : 0;
@@ -391,7 +383,7 @@
             }
 
             const riskPerContract = stopLoss > 0 ? Math.abs(entryPrice - stopLoss) * multiplier : 0;
-            const totalRisk = totalContracts * riskPerContract;
+            const totalRisk = contracts * riskPerContract;
 
             document.getElementById('riskAmount').textContent = totalRisk ? formatMoney(totalRisk) : '';
             document.getElementById('stopLossPrice').textContent = stopLoss ? formatMoney(stopLoss) : '';
@@ -411,9 +403,8 @@
             targets.forEach((target) => {
                 if (target.price > 0 && target.price !== entryPrice) {
                     const grossProfitPerContract = Math.abs(target.price - entryPrice) * multiplier;
-                    const commissionTotalPerContract = commissionPerContract;
-                    const netProfitPerContract = grossProfitPerContract - commissionTotalPerContract;
-                    const totalNetProfit = totalContracts * netProfitPerContract;
+                    const netProfitPerContract = grossProfitPerContract - commissionPerContract;
+                    const totalNetProfit = contracts * netProfitPerContract;
 
                     const targetCard = document.createElement('div');
                     targetCard.className = 'target-card';
