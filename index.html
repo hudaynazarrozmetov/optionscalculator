@@ -114,13 +114,8 @@
             color: var(--color-primary);
         }
 
-        .result-value.success {
-            color: var(--color-success);
-        }
-
-        .result-value.danger {
-            color: var(--color-danger);
-        }
+        .result-value.success { color: var(--color-success); }
+        .result-value.danger { color: var(--color-danger); }
 
         .targets {
             display: grid;
@@ -161,9 +156,7 @@
         }
 
         @media (max-width: 600px) {
-            .row {
-                grid-template-columns: 1fr;
-            }
+            .row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -392,9 +385,16 @@
             return parseNumber(document.getElementById('entryPrice').value);
         }
 
-        function getPositionValue(contracts) {
+        function getMaxContracts() {
+            const account = getAccountSize();
             const entry = getEntryPrice();
-            return contracts * entry * 100;
+            if (!account || !entry) return Infinity;
+
+            const costPerContract = entry * 100;
+            if (costPerContract <= 0) return Infinity;
+
+            const maxContracts = Math.floor(account / costPerContract);
+            return Math.max(0, maxContracts);
         }
 
         function updateContractsWarning() {
@@ -402,32 +402,25 @@
             const warningEl = document.getElementById('contractsWarning');
 
             const contracts = parseNumber(contractsInput.value);
-            const accountSize = getAccountSize();
-            const entry = getEntryPrice();
+            const maxContracts = getMaxContracts();
 
             warningEl.style.display = 'none';
             warningEl.textContent = '';
 
-            if (!accountSize || !entry || !contracts) {
-                return;
-            }
+            if (!isFinite(maxContracts) || maxContracts <= 0 || !contracts) return;
 
-            const posVal = getPositionValue(contracts);
-
-            if (posVal > accountSize) {
+            if (contracts > maxContracts) {
                 warningEl.style.display = 'block';
                 warningEl.textContent =
-                    `Account size is reached. Please enter less than $${accountSize.toLocaleString('en-US')} in contracts value.`;
+                    `Account size is reached. Please enter less than ${maxContracts.toLocaleString('en-US')} contracts.`;
             }
         }
 
-        // Block extra digit that would push position value over account size
+        // Block extra digit that would push contracts over max
         function handleContractsInput(input) {
             const warningEl = document.getElementById('contractsWarning');
-            const accountSize = getAccountSize();
-            const entry = getEntryPrice();
+            const maxContracts = getMaxContracts();
 
-            // strip non-digits
             let raw = input.value.replace(/[^\d]/g, '');
             if (!raw) {
                 input.value = '';
@@ -436,16 +429,14 @@
                 return;
             }
 
-            // previous valid contracts stored in dataset (plain number)
             let prev = input.dataset.prevContracts
                 ? parseInt(input.dataset.prevContracts, 10)
                 : 0;
 
-            // number user is trying to set now
             const attempted = parseInt(raw, 10);
 
-            // if we don't have account or entry yet, allow any contracts, just format
-            if (!accountSize || !entry) {
+            // if we don't know max yet, just format and store
+            if (!isFinite(maxContracts) || maxContracts <= 0) {
                 input.value = formatWithCommas(attempted);
                 input.dataset.prevContracts = attempted.toString();
                 warningEl.style.display = 'none';
@@ -453,27 +444,25 @@
                 return;
             }
 
-            const attemptedValue = getPositionValue(attempted);
-
-            if (attemptedValue > accountSize && prev > 0) {
-                // reject this new digit, revert to previous safe value
+            if (attempted > maxContracts && prev > 0) {
+                // reject new digit, keep previous
                 input.value = formatWithCommas(prev);
                 warningEl.style.display = 'block';
                 warningEl.textContent =
-                    `Account size is reached. Please enter less than $${accountSize.toLocaleString('en-US')} in contracts value.`;
+                    `Account size is reached. Please enter less than ${maxContracts.toLocaleString('en-US')} contracts.`;
                 return;
             }
 
-            if (attemptedValue > accountSize && prev === 0) {
-                // first digit already exceeds account (tiny account, big entry)
+            if (attempted > maxContracts && prev === 0) {
+                // first attempt already over max
                 input.value = '';
                 warningEl.style.display = 'block';
                 warningEl.textContent =
-                    `Account size is reached. Please enter less than $${accountSize.toLocaleString('en-US')} in contracts value.`;
+                    `Account size is reached. Please enter less than ${maxContracts.toLocaleString('en-US')} contracts.`;
                 return;
             }
 
-            // OK: accept this value
+            // ok
             input.value = formatWithCommas(attempted);
             input.dataset.prevContracts = attempted.toString();
             warningEl.style.display = 'none';
