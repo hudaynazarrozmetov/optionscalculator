@@ -87,6 +87,11 @@
             gap: 16px;
         }
 
+        /* Make any element with .full-width span both columns */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
         .results-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -148,6 +153,7 @@
 
         @media (max-width: 600px) {
             .row { grid-template-columns: 1fr; }
+            .full-width { grid-column: 1 / -1; }
         }
     </style>
 </head>
@@ -161,8 +167,9 @@
         <div class="card">
             <h2 style="margin-bottom: 20px; font-size: 18px;">Position Setup</h2>
             
+            <!-- Account Size now spans full width like Option Type -->
             <div class="row">
-                <div class="input-group">
+                <div class="input-group full-width">
                     <label for="account">Account Size ($)</label>
                     <input
                         type="text"
@@ -171,19 +178,6 @@
                         placeholder="0"
                         oninput="handleAccountInput(this); updateContractsWarning();"
                         onblur="formatAccountOnBlur(this); updateContractsWarning();"
-                    >
-                </div>
-                
-                <div class="input-group">
-                    <label for="risk">Risk Per Trade (%)</label>
-                    <input
-                        type="number"
-                        id="risk"
-                        step="0.1"
-                        min="1"
-                        max="100"
-                        placeholder="0"
-                        oninput="clampPercentInput(this)"
                     >
                 </div>
             </div>
