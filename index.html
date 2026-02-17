@@ -206,6 +206,14 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* small red warning under Contracts */
+        .warning-text {
+            font-size: 12px;
+            color: var(--color-danger);
+            margin-top: 4px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -221,14 +229,13 @@
             <div class="row">
                 <div class="input-group">
                     <label for="account">Account Size ($)</label>
-                    <!-- text so we can show commas -->
                     <input
                         type="text"
                         id="account"
                         inputmode="decimal"
                         placeholder="0"
-                        oninput="handleAccountInput(this)"
-                        onblur="formatAccountOnBlur(this)"
+                        oninput="handleAccountInput(this); clampContractsToAccount();"
+                        onblur="formatAccountOnBlur(this); clampContractsToAccount();"
                     >
                 </div>
                 
@@ -257,7 +264,15 @@
             <div class="row">
                 <div class="input-group">
                     <label for="entryPrice">Entry Price (per contract) ($)</label>
-                    <input type="number" id="entryPrice" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+                    <input
+                        type="number"
+                        id="entryPrice"
+                        inputmode="decimal"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        oninput="clampContractsToAccount();"
+                    >
                 </div>
                 
                 <div class="input-group">
@@ -269,6 +284,9 @@
                         placeholder="0"
                         oninput="handleContractsInput(this)"
                     >
+                    <div id="contractsWarning" class="warning-text">
+                        Account size is reached.
+                    </div>
                 </div>
             </div>
 
@@ -389,7 +407,6 @@
         function handleAccountInput(input) {
             let value = input.value.replace(/[^\d.]/g, '');
 
-            // remove negative if someone pastes it
             if (value.startsWith('-')) {
                 value = value.slice(1);
             }
@@ -419,15 +436,84 @@
             });
         }
 
-        // ---------- Contracts formatting ----------
-        function handleContractsInput(input) {
-            let value = input.value.replace(/[^\d]/g, '');
-            if (!value) {
-                input.value = '';
+        // ---------- Contracts vs Account Size ----------
+        function getMaxContractsByAccount() {
+            const accountSize = parseNumber(document.getElementById('account').value);
+            const entryPrice = parseNumber(document.getElementById('entryPrice').value);
+
+            if (!accountSize || !entryPrice) return Infinity;
+
+            // max dollars in position = accountSize
+            // cost per contract = entryPrice * 100
+            const costPerContract = entryPrice * 100;
+            if (costPerContract <= 0) return Infinity;
+
+            const maxContracts = Math.floor(accountSize / costPerContract);
+            return Math.max(0, maxContracts);
+        }
+
+        function showContractsWarning(show) {
+            const warningEl = document.getElementById('contractsWarning');
+            warningEl.style.display = show ? 'block' : 'none';
+        }
+
+        function clampContractsToAccount() {
+            const contractsInput = document.getElementById('contracts');
+            let val = parseNumber(contractsInput.value);
+            const maxContracts = getMaxContractsByAccount();
+
+            if (!isFinite(maxContracts)) {
+                showContractsWarning(false);
                 return;
             }
-            const num = parseInt(value, 10);
-            input.value = formatWithCommas(num);
+
+            let changed = false;
+
+            if (val > maxContracts) {
+                val = maxContracts;
+                changed = true;
+            }
+            if (val < 0) {
+                val = 0;
+                changed = true;
+            }
+
+            if (val === 0) {
+                contractsInput.value = '';
+            } else {
+                contractsInput.value = formatWithCommas(val);
+            }
+
+            showContractsWarning(changed && val > 0);
+        }
+
+        function handleContractsInput(input) {
+            let raw = input.value.replace(/[^\d]/g, '');
+            if (!raw) {
+                input.value = '';
+                showContractsWarning(false);
+                return;
+            }
+
+            let val = parseInt(raw, 10);
+            const maxContracts = getMaxContractsByAccount();
+
+            let exceeded = false;
+
+            if (isFinite(maxContracts) && val > maxContracts) {
+                val = maxContracts;
+                exceeded = true;
+            }
+
+            if (val < 0) val = 0;
+
+            if (val === 0) {
+                input.value = '';
+            } else {
+                input.value = formatWithCommas(val);
+            }
+
+            showContractsWarning(exceeded && val > 0);
         }
 
         // ---------- main calc ----------
