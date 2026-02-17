@@ -114,21 +114,12 @@
             color: var(--color-primary);
         }
 
-        .result-value.success { color: var(--color-success); }
-        .result-value.danger { color: var(--color-danger); }
-
-        .targets {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
+        .result-value.success {
+            color: var(--color-success);
         }
 
-        .target-card {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 8px;
-            padding: 16px;
+        .result-value.danger {
+            color: var(--color-danger);
         }
 
         button {
@@ -296,12 +287,10 @@
                     <div class="result-label">Risk Amount</div>
                     <div class="result-value danger" id="riskAmount">$0.00</div>
                 </div>
-            </div>
 
-            <div class="targets" id="targetsContainer">
-                <div class="target-card">
-                    <div class="target-title">Take Profit</div>
-                    <div class="target-profit" id="takeProfitCardValue">$0.00</div>
+                <div class="result-box">
+                    <div class="result-label">Take Profit</div>
+                    <div class="result-value success" id="takeProfitCardValue">$0.00</div>
                 </div>
             </div>
         </div>
@@ -435,7 +424,6 @@
 
             const attempted = parseInt(raw, 10);
 
-            // if we don't know max yet, just format and store
             if (!isFinite(maxContracts) || maxContracts <= 0) {
                 input.value = formatWithCommas(attempted);
                 input.dataset.prevContracts = attempted.toString();
@@ -445,7 +433,6 @@
             }
 
             if (attempted > maxContracts && prev > 0) {
-                // reject new digit, keep previous
                 input.value = formatWithCommas(prev);
                 warningEl.style.display = 'block';
                 warningEl.textContent =
@@ -454,7 +441,6 @@
             }
 
             if (attempted > maxContracts && prev === 0) {
-                // first attempt already over max
                 input.value = '';
                 warningEl.style.display = 'block';
                 warningEl.textContent =
@@ -462,7 +448,6 @@
                 return;
             }
 
-            // ok
             input.value = formatWithCommas(attempted);
             input.dataset.prevContracts = attempted.toString();
             warningEl.style.display = 'none';
