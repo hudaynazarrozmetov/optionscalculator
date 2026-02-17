@@ -87,7 +87,6 @@
             gap: 16px;
         }
 
-        /* Make any element with .full-width span both columns */
         .full-width {
             grid-column: 1 / -1;
         }
@@ -167,7 +166,6 @@
         <div class="card">
             <h2 style="margin-bottom: 20px; font-size: 18px;">Position Setup</h2>
             
-            <!-- Account Size now spans full width like Option Type -->
             <div class="row">
                 <div class="input-group full-width">
                     <label for="account">Account Size ($)</label>
@@ -277,6 +275,12 @@
             <h2 style="margin-bottom: 20px; font-size: 18px;">Profit Targets</h2>
             
             <div class="results-grid">
+                <!-- New Contracts Value box -->
+                <div class="result-box">
+                    <div class="result-label">Contracts Value ($)</div>
+                    <div class="result-value" id="contractsValue">$0.00</div>
+                </div>
+
                 <div class="result-box">
                     <div class="result-label">Risk Amount</div>
                     <div class="result-value danger" id="riskAmount">$0.00</div>
@@ -459,12 +463,14 @@
             const target1Percent = parseNumber(document.getElementById('target1Percent').value);
             const commissionPerContract = parseNumber(document.getElementById('commissionPerContract').value);
 
+            const contractsValueEl = document.getElementById('contractsValue');
             const riskAmountEl = document.getElementById('riskAmount');
             const stopLossPriceEl = document.getElementById('stopLossPrice');
             const target1PriceEl = document.getElementById('target1Price');
             const takeProfitCardValueEl = document.getElementById('takeProfitCardValue');
 
             if (!entryPrice || !contracts) {
+                contractsValueEl.textContent = '$0.00';
                 riskAmountEl.textContent = '$0.00';
                 stopLossPriceEl.textContent = '$0.00';
                 target1PriceEl.textContent = '$0.00';
@@ -473,6 +479,10 @@
             }
 
             const multiplier = 100;
+
+            // Contracts value = contracts * entryPrice * 100
+            const contractsValue = contracts * entryPrice * multiplier;
+            contractsValueEl.textContent = formatMoney(contractsValue);
 
             let stopLoss, target1;
 
