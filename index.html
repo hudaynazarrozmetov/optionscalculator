@@ -46,11 +46,6 @@
             margin-bottom: 8px;
         }
 
-        .subtitle {
-            color: var(--color-text-secondary);
-            font-size: 14px;
-        }
-
         .card {
             background: var(--color-bg-surface);
             border-radius: 12px;
@@ -141,25 +136,6 @@
             padding: 16px;
         }
 
-        .target-title {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-        }
-
-        .target-profit {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--color-success);
-            margin-bottom: 4px;
-        }
-
-        .target-points {
-            font-size: 14px;
-            color: var(--color-text-secondary);
-        }
-
         button {
             width: 100%;
             padding: 14px;
@@ -177,42 +153,17 @@
             opacity: 0.9;
         }
 
-        .risk-indicator {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 16px;
+        .warning-text {
             font-size: 12px;
-            font-weight: 600;
-            margin-top: 8px;
-        }
-
-        .risk-conservative {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--color-success);
-        }
-
-        .risk-moderate {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-
-        .risk-aggressive {
-            background: rgba(239, 68, 68, 0.2);
             color: var(--color-danger);
+            margin-top: 4px;
+            display: none;
         }
 
         @media (max-width: 600px) {
             .row {
                 grid-template-columns: 1fr;
             }
-        }
-
-        /* small red warning under Contracts */
-        .warning-text {
-            font-size: 12px;
-            color: var(--color-danger);
-            margin-top: 4px;
-            display: none;
         }
     </style>
 </head>
@@ -234,8 +185,8 @@
                         id="account"
                         inputmode="decimal"
                         placeholder="0"
-                        oninput="handleAccountInput(this); clampContractsToAccount();"
-                        onblur="formatAccountOnBlur(this); clampContractsToAccount();"
+                        oninput="handleAccountInput(this); updateContractsWarning();"
+                        onblur="formatAccountOnBlur(this); updateContractsWarning();"
                     >
                 </div>
                 
@@ -271,7 +222,7 @@
                         step="0.01"
                         min="0"
                         placeholder="0.00"
-                        oninput="clampContractsToAccount();"
+                        oninput="updateContractsWarning();"
                     >
                 </div>
                 
@@ -284,9 +235,7 @@
                         placeholder="0"
                         oninput="handleContractsInput(this)"
                     >
-                    <div id="contractsWarning" class="warning-text">
-                        Account size is reached.
-                    </div>
+                    <div id="contractsWarning" class="warning-text"></div>
                 </div>
             </div>
 
@@ -407,9 +356,7 @@
         function handleAccountInput(input) {
             let value = input.value.replace(/[^\d.]/g, '');
 
-            if (value.startsWith('-')) {
-                value = value.slice(1);
-            }
+            if (value.startsWith('-')) value = value.slice(1);
 
             const parts = value.split('.');
             let whole = parts[0];
@@ -437,90 +384,107 @@
         }
 
         // ---------- Contracts vs Account Size ----------
-        function getMaxContractsByAccount() {
-            const accountSize = parseNumber(document.getElementById('account').value);
-            const entryPrice = parseNumber(document.getElementById('entryPrice').value);
-
-            if (!accountSize || !entryPrice) return Infinity;
-
-            // max dollars in position = accountSize
-            // cost per contract = entryPrice * 100
-            const costPerContract = entryPrice * 100;
-            if (costPerContract <= 0) return Infinity;
-
-            const maxContracts = Math.floor(accountSize / costPerContract);
-            return Math.max(0, maxContracts);
+        function getAccountSize() {
+            return parseNumber(document.getElementById('account').value);
         }
 
-        function showContractsWarning(show) {
-            const warningEl = document.getElementById('contractsWarning');
-            warningEl.style.display = show ? 'block' : 'none';
+        function getEntryPrice() {
+            return parseNumber(document.getElementById('entryPrice').value);
         }
 
-        function clampContractsToAccount() {
+        function getPositionValue(contracts) {
+            const entry = getEntryPrice();
+            return contracts * entry * 100;
+        }
+
+        function updateContractsWarning() {
             const contractsInput = document.getElementById('contracts');
-            let val = parseNumber(contractsInput.value);
-            const maxContracts = getMaxContractsByAccount();
+            const warningEl = document.getElementById('contractsWarning');
 
-            if (!isFinite(maxContracts)) {
-                showContractsWarning(false);
+            const contracts = parseNumber(contractsInput.value);
+            const accountSize = getAccountSize();
+            const entry = getEntryPrice();
+
+            warningEl.style.display = 'none';
+            warningEl.textContent = '';
+
+            if (!accountSize || !entry || !contracts) {
                 return;
             }
 
-            let changed = false;
+            const posVal = getPositionValue(contracts);
 
-            if (val > maxContracts) {
-                val = maxContracts;
-                changed = true;
+            if (posVal > accountSize) {
+                warningEl.style.display = 'block';
+                warningEl.textContent =
+                    `Account size is reached. Please enter less than $${accountSize.toLocaleString('en-US')} in contracts value.`;
             }
-            if (val < 0) {
-                val = 0;
-                changed = true;
-            }
-
-            if (val === 0) {
-                contractsInput.value = '';
-            } else {
-                contractsInput.value = formatWithCommas(val);
-            }
-
-            showContractsWarning(changed && val > 0);
         }
 
+        // Block extra digit that would push position value over account size
         function handleContractsInput(input) {
+            const warningEl = document.getElementById('contractsWarning');
+            const accountSize = getAccountSize();
+            const entry = getEntryPrice();
+
+            // strip non-digits
             let raw = input.value.replace(/[^\d]/g, '');
             if (!raw) {
                 input.value = '';
-                showContractsWarning(false);
+                warningEl.style.display = 'none';
+                warningEl.textContent = '';
                 return;
             }
 
-            let val = parseInt(raw, 10);
-            const maxContracts = getMaxContractsByAccount();
+            // previous valid contracts stored in dataset (plain number)
+            let prev = input.dataset.prevContracts
+                ? parseInt(input.dataset.prevContracts, 10)
+                : 0;
 
-            let exceeded = false;
+            // number user is trying to set now
+            const attempted = parseInt(raw, 10);
 
-            if (isFinite(maxContracts) && val > maxContracts) {
-                val = maxContracts;
-                exceeded = true;
+            // if we don't have account or entry yet, allow any contracts, just format
+            if (!accountSize || !entry) {
+                input.value = formatWithCommas(attempted);
+                input.dataset.prevContracts = attempted.toString();
+                warningEl.style.display = 'none';
+                warningEl.textContent = '';
+                return;
             }
 
-            if (val < 0) val = 0;
+            const attemptedValue = getPositionValue(attempted);
 
-            if (val === 0) {
+            if (attemptedValue > accountSize && prev > 0) {
+                // reject this new digit, revert to previous safe value
+                input.value = formatWithCommas(prev);
+                warningEl.style.display = 'block';
+                warningEl.textContent =
+                    `Account size is reached. Please enter less than $${accountSize.toLocaleString('en-US')} in contracts value.`;
+                return;
+            }
+
+            if (attemptedValue > accountSize && prev === 0) {
+                // first digit already exceeds account (tiny account, big entry)
                 input.value = '';
-            } else {
-                input.value = formatWithCommas(val);
+                warningEl.style.display = 'block';
+                warningEl.textContent =
+                    `Account size is reached. Please enter less than $${accountSize.toLocaleString('en-US')} in contracts value.`;
+                return;
             }
 
-            showContractsWarning(exceeded && val > 0);
+            // OK: accept this value
+            input.value = formatWithCommas(attempted);
+            input.dataset.prevContracts = attempted.toString();
+            warningEl.style.display = 'none';
+            warningEl.textContent = '';
         }
 
         // ---------- main calc ----------
         function calculate() {
             const optionType = document.getElementById('optionType').value;
 
-            const entryPrice = parseNumber(document.getElementById('entryPrice').value);
+            const entryPrice = getEntryPrice();
             const contracts = parseNumber(document.getElementById('contracts').value);
 
             const stopLossPercent = parseNumber(document.getElementById('stopLossPercent').value);
