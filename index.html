@@ -281,12 +281,12 @@
             <div class="results-grid">
                 <div class="result-box">
                     <div class="result-label">Stop Loss Price</div>
-                    <div class="result-value danger" id="stopLossPrice"></div>
+                    <div class="result-value danger" id="stopLossPrice">$0.00</div>
                 </div>
                 
                 <div class="result-box">
                     <div class="result-label">Take Profit Price</div>
-                    <div class="result-value success" id="target1Price"></div>
+                    <div class="result-value success" id="target1Price">$0.00</div>
                 </div>
             </div>
         </div>
@@ -297,11 +297,16 @@
             <div class="results-grid">
                 <div class="result-box">
                     <div class="result-label">Risk Amount</div>
-                    <div class="result-value danger" id="riskAmount"></div>
+                    <div class="result-value danger" id="riskAmount">$0.00</div>
                 </div>
             </div>
 
-            <div class="targets" id="targetsContainer"></div>
+            <div class="targets" id="targetsContainer">
+                <div class="target-card">
+                    <div class="target-title">Take Profit</div>
+                    <div class="target-profit" id="takeProfitCardValue">$0.00</div>
+                </div>
+            </div>
         </div>
 
         <div class="card" style="background: rgba(56, 189, 248, 0.05);">
@@ -320,7 +325,6 @@
         }
 
         function formatMoney(num) {
-            if (!num && num !== 0) return '';
             return '$' + num.toFixed(2);
         }
 
@@ -334,11 +338,17 @@
             const target1Percent = parseNumber(document.getElementById('target1Percent').value);
             const commissionPerContract = parseNumber(document.getElementById('commissionPerContract').value);
 
+            const riskAmountEl = document.getElementById('riskAmount');
+            const stopLossPriceEl = document.getElementById('stopLossPrice');
+            const target1PriceEl = document.getElementById('target1Price');
+            const takeProfitCardValueEl = document.getElementById('takeProfitCardValue');
+
+            // If key inputs are missing, reset to $0.00 and stop
             if (!entryPrice || !contracts) {
-                document.getElementById('riskAmount').textContent = '';
-                document.getElementById('stopLossPrice').textContent = '';
-                document.getElementById('target1Price').textContent = '';
-                document.getElementById('targetsContainer').innerHTML = '';
+                riskAmountEl.textContent = '$0.00';
+                stopLossPriceEl.textContent = '$0.00';
+                target1PriceEl.textContent = '$0.00';
+                takeProfitCardValueEl.textContent = '$0.00';
                 return;
             }
 
@@ -347,36 +357,25 @@
             let stopLoss, target1;
 
             if (optionType === 'call') {
-                stopLoss = stopLossPercent > 0 ? entryPrice * (1 - stopLossPercent / 100) : 0;
-                target1 = target1Percent > 0 ? entryPrice * (1 + target1Percent / 100) : 0;
+                stopLoss = stopLossPercent > 0 ? entryPrice * (1 - stopLossPercent / 100) : entryPrice;
+                target1 = target1Percent > 0 ? entryPrice * (1 + target1Percent / 100) : entryPrice;
             } else {
-                stopLoss = stopLossPercent > 0 ? entryPrice * (1 + stopLossPercent / 100) : 0;
-                target1 = target1Percent > 0 ? entryPrice * (1 - target1Percent / 100) : 0;
+                stopLoss = stopLossPercent > 0 ? entryPrice * (1 + stopLossPercent / 100) : entryPrice;
+                target1 = target1Percent > 0 ? entryPrice * (1 - target1Percent / 100) : entryPrice;
             }
 
-            const riskPerContract = stopLoss > 0 ? Math.abs(entryPrice - stopLoss) * multiplier : 0;
+            const riskPerContract = Math.abs(entryPrice - stopLoss) * multiplier;
             const totalRisk = contracts * riskPerContract;
 
-            document.getElementById('riskAmount').textContent = totalRisk ? formatMoney(totalRisk) : '';
-            document.getElementById('stopLossPrice').textContent = stopLoss ? formatMoney(stopLoss) : '';
-            document.getElementById('target1Price').textContent = target1 ? formatMoney(target1) : '';
+            riskAmountEl.textContent = formatMoney(totalRisk);
+            stopLossPriceEl.textContent = formatMoney(stopLoss);
+            target1PriceEl.textContent = formatMoney(target1);
 
-            const targetsContainer = document.getElementById('targetsContainer');
-            targetsContainer.innerHTML = '';
+            const grossProfitPerContract = Math.abs(target1 - entryPrice) * multiplier;
+            const netProfitPerContract = grossProfitPerContract - commissionPerContract;
+            const totalNetProfit = contracts * netProfitPerContract;
 
-            if (target1 > 0 && target1 !== entryPrice) {
-                const grossProfitPerContract = Math.abs(target1 - entryPrice) * multiplier;
-                const netProfitPerContract = grossProfitPerContract - commissionPerContract;
-                const totalNetProfit = contracts * netProfitPerContract;
-
-                const targetCard = document.createElement('div');
-                targetCard.className = 'target-card';
-                targetCard.innerHTML = `
-                    <div class="target-title">Take Profit</div>
-                    <div class="target-profit">${totalNetProfit ? formatMoney(totalNetProfit) : ''}</div>
-                `;
-                targetsContainer.appendChild(targetCard);
-            }
+            takeProfitCardValueEl.textContent = formatMoney(totalNetProfit);
         }
     </script>
 </body>
